@@ -13,12 +13,12 @@ def main():
     agent.load_weights('./save_weights/')
 
     time = 0
-    state = env.reset()
+    state,_ = env.reset()
 
     while True:
         env.render()
         action = agent.actor(tf.convert_to_tensor([state], dtype=tf.float32))[0][0]
-        state, reward, done, _ = env.step(action)
+        state, reward, info, done, _ = env.step(action)
         time += 1
 
         print('Time: ', time, 'Reward: ', reward)

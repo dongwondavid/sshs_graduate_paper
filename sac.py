@@ -1,9 +1,10 @@
-# SAC learn (tf2 subclassing version)
-# coded by St.Watermelon
-
+import gym
 import numpy as np
+from collections import deque
+import random
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import mujoco_py
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Dense, Lambda, concatenate
@@ -11,8 +12,67 @@ from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from replaybuffer import ReplayBuffer
+def main():
 
+    max_episode_num = 200
+    env = gym.make("HalfCheetah-v4")
+    agent = SACagent(env)
+
+    agent.train(max_episode_num)
+
+    agent.plot_result()
+
+
+
+if __name__=="__main__":
+    main()
+
+
+class ReplayBuffer(object):
+    """
+    Reply Buffer
+    """
+    def __init__(self, buffer_size):
+        self.buffer_size = buffer_size
+        self.buffer = deque()
+        self.count = 0
+
+    ## save to buffer
+    def add_buffer(self, state, action, reward, next_state, done):
+        transition = (state, action, reward, next_state, done)
+
+        # check if buffer is full
+        if self.count < self.buffer_size:
+            self.buffer.append(transition)
+            self.count += 1
+        else:
+            self.buffer.popleft()
+            self.buffer.append(transition)
+
+    ## sample a batch
+    def sample_batch(self, batch_size):
+        if self.count < batch_size:
+            batch = random.sample(self.buffer, self.count)
+        else:
+            batch = random.sample(self.buffer, batch_size)
+        # return a batch of transitions
+        states = np.asarray([i[0] for i in batch])
+        actions = np.asarray([i[1] for i in batch])
+        rewards = np.asarray([i[2] for i in batch])
+        next_states = np.asarray([i[3] for i in batch])
+        dones = np.asarray([i[4] for i in batch])
+        return states, actions, rewards, next_states, dones
+
+
+    ## Current buffer occupation
+    def buffer_count(self):
+        return self.count
+
+
+    ## Clear buffer
+    def clear_buffer(self):
+        self.buffer = deque()
+        self.count = 0
 
 # actor network
 class Actor(Model):
@@ -249,10 +309,10 @@ class SACagent(object):
             self.save_epi_reward.append(episode_reward)
 
 
-            ## save weights every episode
-            #print('Now save')
-            self.actor.save_weights("./save_weights/pendulum_actor.weights.h5")
-            self.critic.save_weights("./save_weights/pendulum_critic.weights.h5")
+            # ## save weights every episode
+            # #print('Now save')
+            # self.actor.save_weights("./save_weights/pendulum_actor.weights.h5")
+            # self.critic.save_weights("./save_weights/pendulum_critic.weights.h5")
 
         np.savetxt('./save_weights/pendulum_epi_reward.txt', self.save_epi_reward)
         print(self.save_epi_reward)
