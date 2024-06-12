@@ -7,7 +7,7 @@ import tensorflow as tf
 
 def main():
 
-    env = gym.make("Pendulum-v1")
+    env = gym.make("HalfCheetah-v4")
     agent = SACagent(env)
 
     agent.load_weights('./save_weights/')

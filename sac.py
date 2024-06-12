@@ -4,28 +4,12 @@ from collections import deque
 import random
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import mujoco_py
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Dense, Lambda, concatenate
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 import tensorflow_probability as tfp
-
-def main():
-
-    max_episode_num = 200
-    env = gym.make("HalfCheetah-v4")
-    agent = SACagent(env)
-
-    agent.train(max_episode_num)
-
-    agent.plot_result()
-
-
-
-if __name__=="__main__":
-    main()
 
 
 class ReplayBuffer(object):
@@ -162,6 +146,8 @@ class SACagent(object):
         self.action_bound = env.action_space.high[0]
 
         ## create actor and critic networks
+        print(self.action_dim, self.action_bound)
+        print(None, self.state_dim)
         self.actor = Actor(self.action_dim, self.action_bound)
         self.actor.build(input_shape=(None, self.state_dim))
 
@@ -254,9 +240,11 @@ class SACagent(object):
             # reset episode
             time, episode_reward, done = 0, 0, False
             # reset the environment and observe the first state
-            state, _ = self.env.reset()
+            state = self.env.reset()
 
-            while not done:
+            index =1000
+            while not done and index>0:
+                index-=1
                 # visualize the environment
                 #self.env.render()
                 # pick an action: shape = (1,)
@@ -265,7 +253,7 @@ class SACagent(object):
                 action = np.clip(action, -self.action_bound, self.action_bound)
                 # observe reward, new_state
                 # print(self.env.step(action))
-                next_state, reward, info, done,_ = self.env.step(action)
+                next_state, reward, done,_ = self.env.step(action)
                 # add transition to replay buffer
                 train_reward = (reward + 8) / 8
 
@@ -322,3 +310,18 @@ class SACagent(object):
     def plot_result(self):
         plt.plot(self.save_epi_reward)
         plt.show()
+
+def main():
+
+    max_episode_num = 200
+    env = gym.make("HalfCheetah-v4")
+    agent = SACagent(env)
+
+    agent.train(max_episode_num)
+
+    agent.plot_result()
+
+
+
+if __name__=="__main__":
+    main()
